@@ -1,0 +1,2 @@
+DejaVu Sans fonts (Bitstream Vera derived) — free license permitting embedding and redistribution: https://dejavu-fonts.github.io/License.html
+Used in generated order-confirmation PDFs (includes the ₹ glyph).
