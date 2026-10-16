@@ -30,7 +30,7 @@ function highlight(text: string, needle: string | null) {
   return (
     <>
       {text.slice(0, i)}
-      <mark className="rounded bg-[#f6dfa6] px-0.5 text-ink transition-colors">{text.slice(i, i + n.length)}</mark>
+      <mark className="rounded bg-volt px-0.5 text-ink transition-colors">{text.slice(i, i + n.length)}</mark>
       {text.slice(i + n.length)}
     </>
   );
@@ -84,7 +84,7 @@ export function SourcePanel({
         </div>
         <div className="p-4">
           {view.inputType === "TEXT" && (
-            <div className="relative max-w-[95%] rounded-2xl rounded-tl-md bg-[#efe9dc] px-4 py-3 text-[14px] leading-relaxed text-ink">
+            <div className="relative max-w-[95%] rounded-2xl rounded-tl-md bg-sunken px-4 py-3 text-[14px] leading-relaxed text-ink">
               <p className="whitespace-pre-wrap break-words" lang={/[ఀ-౿]/.test(view.sourceText ?? "") ? "te" : undefined}>
                 {highlight(view.sourceText ?? "", activeText)}
               </p>

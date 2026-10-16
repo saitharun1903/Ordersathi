@@ -57,7 +57,7 @@ export default async function CustomerDetailPage(props: PageProps<"/customers/[i
       <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-ink sm:text-[22px]">{customer.name}</h1>
+            <h1 className="text-2xl font-bold tracking-[-0.03em] text-ink sm:text-[28px]">{customer.name}</h1>
             <LanguagePill lang={customer.preferredLanguage} />
           </div>
           <dl className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-2">

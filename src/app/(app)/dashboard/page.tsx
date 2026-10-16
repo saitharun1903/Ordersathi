@@ -79,10 +79,10 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-muted">
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
             {greeting}, {ctx.userName.split(" ")[0]}
           </p>
-          <h1 className="text-xl font-semibold tracking-[-0.01em] sm:text-[22px]">{ctx.workspaceName}</h1>
+          <h1 className="mt-1 text-[26px] font-bold leading-tight tracking-[-0.035em] sm:text-[32px]">{ctx.workspaceName}</h1>
         </div>
         <Button asChild variant="primary" size="lg">
           <Link href="/orders/new">
@@ -102,34 +102,34 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-line [gap:1px] lg:grid-cols-4">
         <Kpi href="/orders" icon={<Inbox />} label="Awaiting review" value={String(awaiting)} hint={`${ready} ready to approve`} tone={awaiting ? "warn" : "neutral"} />
         <Kpi href="/orders?tab=ready" icon={<ClipboardCheck />} label="Ready to approve" value={String(ready)} hint="All items confirmed" />
         <Kpi href="/orders?tab=clarify" icon={<CircleAlert />} label="Unresolved line items" value={String(unresolved)} hint="Across open orders" tone={unresolved ? "warn" : "neutral"} />
-        <Card className="relative p-4">
+        <div className="relative bg-night p-4 text-white sm:p-5">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[13px] font-medium text-muted">Approved order value</p>
-            <CheckCircle2 className="size-4 text-ok" />
+            <p className="text-[13px] font-medium text-white/60">Approved order value</p>
+            <CheckCircle2 className="size-4 text-volt" />
           </div>
-          <p className="mt-2 text-2xl font-semibold tracking-[-0.02em] tnum" title={formatPaise(approvedAgg._sum.totalPaise ?? 0)}>
+          <p className="mt-2 font-display text-[30px] font-bold leading-none tracking-[-0.04em] text-volt tnum sm:text-[36px]" title={formatPaise(approvedAgg._sum.totalPaise ?? 0)}>
             {formatPaiseShort(approvedAgg._sum.totalPaise ?? 0)}
           </p>
-          <div className="mt-1.5 flex items-center justify-between gap-2">
-            <p className="text-xs text-muted">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-white/50">
               {approvedAgg._count} order{approvedAgg._count === 1 ? "" : "s"} · not payments
             </p>
-            <nav aria-label="Period" className="flex rounded-md bg-sunken p-0.5">
+            <nav aria-label="Period" className="flex rounded-md bg-white/10 p-0.5">
               {PERIODS.map((p) => (
-                <Link key={p.key} href={`/dashboard?period=${p.key}`} aria-current={p.key === period ? "true" : undefined} className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", p.key === period ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-muted hover:text-ink")}>
+                <Link key={p.key} href={`/dashboard?period=${p.key}`} aria-current={p.key === period ? "true" : undefined} className={cn("rounded px-1.5 py-0.5 font-mono text-[11px] font-medium", p.key === period ? "bg-white text-ink" : "text-white/60 hover:text-white")}>
                   {p.label}
                 </Link>
               ))}
             </nav>
           </div>
-        </Card>
+        </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card>
           <CardHeader
             title="Needs your attention"
@@ -152,13 +152,13 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                 return (
                   <li key={o.id}>
                     <Link href={`/orders/${o.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2 sm:px-5">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sunken text-muted">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-line bg-surface-2 text-ink-2">
                         <Icon className="size-4" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13.5px] font-medium">
                           {o.customer?.name ?? <span className="text-warn">Customer not set</span>}
-                          <span className="ml-2 font-mono text-[11px] text-faint">#{String(o.number).padStart(4, "0")}</span>
+                          <span className="ml-2 font-mono text-[11px] text-muted">#{String(o.number).padStart(4, "0")}</span>
                         </p>
                         <p className="text-xs text-muted">
                           {formatRelative(o.createdAt)}
@@ -166,7 +166,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                         </p>
                       </div>
                       <OrderStatusBadge status={o.status} className="hidden sm:inline-flex" />
-                      <span className="text-[13px] font-medium tnum">{o.totalPaise ? formatPaise(o.totalPaise) : ""}</span>
+                      <span className="min-w-[84px] text-right text-[13.5px] font-semibold tnum">{o.totalPaise ? formatPaise(o.totalPaise) : ""}</span>
                     </Link>
                   </li>
                 );
@@ -179,12 +179,16 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           <Card>
             <CardHeader title="Approved order value" description="Last 14 days, by approval date (IST). Not revenue or collections." />
             <div className="px-4 pb-4 pt-3 sm:px-5">
-              <div className="flex h-28 items-end gap-1" role="img" aria-label="Bar chart of approved order value over the last 14 days">
-                {days.map((d) => {
+              <div className="flex h-32 items-end gap-1.5" role="img" aria-label="Bar chart of approved order value over the last 14 days">
+                {days.map((d, i) => {
                   const v = byDay.get(d)!;
+                  const today = i === days.length - 1;
                   return (
                     <div key={d} className="group relative flex h-full flex-1 flex-col justify-end">
-                      <div className={cn("rounded-t-sm transition-colors", v ? "bg-brand/80 group-hover:bg-brand" : "bg-sunken")} style={{ height: v ? `${Math.max(6, (v / max) * 100)}%` : "3px" }} />
+                      <div
+                        className={cn("rounded-[3px] transition-colors", v ? (today ? "bg-volt ring-1 ring-inset ring-ink/15" : "bg-ink group-hover:bg-ink-2") : "bg-sunken")}
+                        style={{ height: v ? `${Math.max(6, (v / max) * 100)}%` : "3px" }}
+                      />
                       <span className="pointer-events-none absolute -top-6 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-ink px-1.5 py-0.5 text-[10px] text-white group-hover:block">
                         {d.slice(8)}/{d.slice(5, 7)} · {formatPaiseShort(v)}
                       </span>
@@ -192,7 +196,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                   );
                 })}
               </div>
-              <div className="mt-1.5 flex justify-between text-[10px] text-faint">
+              <div className="mt-2 flex justify-between font-mono text-[10px] text-muted">
                 <span>{days[0].slice(8)}/{days[0].slice(5, 7)}</span>
                 <span>Today</span>
               </div>
@@ -207,11 +211,11 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
                 {events.map((e) => (
                   <li key={e.id} className="flex items-baseline justify-between gap-3 py-1.5 text-[13px]">
                     <Link href={`/orders/${e.orderId}`} className="min-w-0 truncate hover:underline">
-                      <span className="font-medium">#{String(e.order?.number ?? 0).padStart(4, "0")}</span>
+                      <span className="font-mono text-[12px] font-medium">#{String(e.order?.number ?? 0).padStart(4, "0")}</span>
                       <span className="text-muted"> {e.order?.customer?.name ? `· ${e.order.customer.name} ` : ""}</span>
                       <span className={cn(e.type === "order.approved" ? "text-ok" : e.type.includes("fail") || e.type === "order.rejected" ? "text-bad" : "text-ink-2")}>{EVENT_TEXT[e.type]}</span>
                     </Link>
-                    <span className="shrink-0 text-[11px] text-faint">{formatRelative(e.createdAt)}</span>
+                    <span className="shrink-0 text-[11px] text-muted">{formatRelative(e.createdAt)}</span>
                   </li>
                 ))}
               </ul>
@@ -225,15 +229,19 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
 
 function Kpi({ href, icon, label, value, hint, tone = "neutral" }: { href: string; icon: React.ReactNode; label: string; value: string; hint: string; tone?: "neutral" | "warn" }) {
   return (
-    <Link href={href} className="group">
-      <Card className="h-full p-4 transition-colors group-hover:border-line-strong">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[13px] font-medium text-muted">{label}</p>
-          <span className={cn("[&_svg]:size-4", tone === "warn" ? "text-warn-strong" : "text-faint")}>{icon}</span>
-        </div>
-        <p className={cn("mt-2 text-2xl font-semibold tracking-[-0.02em] tnum", tone === "warn" && "text-warn")}>{value}</p>
-        <p className="mt-1.5 text-xs text-muted">{hint}</p>
-      </Card>
+    <Link href={href} className="group relative bg-surface p-4 transition-colors hover:bg-surface-2 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[13px] font-medium text-muted">{label}</p>
+        <span className={cn("[&_svg]:size-4", tone === "warn" ? "text-warn-strong" : "text-faint")}>{icon}</span>
+      </div>
+      <p className="mt-2 flex items-baseline gap-2 font-display text-[30px] font-bold leading-none tracking-[-0.04em] tnum sm:text-[36px]">
+        {value}
+        {tone === "warn" && <span className="size-2 -translate-y-1 rounded-full bg-warn-strong" aria-hidden />}
+      </p>
+      <p className="mt-3 flex items-center gap-1 text-xs text-muted">
+        {hint}
+        <ArrowRight className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+      </p>
     </Link>
   );
 }

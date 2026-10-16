@@ -65,7 +65,7 @@ export function SignUpForm() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-[-0.015em] text-ink">Create your account</h1>
+      <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-ink">Create your account</h1>
       <p className="mt-1.5 text-sm text-muted">Set up your order desk in a few minutes. No card required.</p>
 
       <form className="mt-7 flex flex-col gap-4" noValidate onSubmit={onSubmit}>
@@ -106,7 +106,7 @@ export function SignUpForm() {
 
       <p className="mt-5 text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link href="/sign-in" className="font-medium text-brand underline-offset-4 hover:underline">
+        <Link href="/sign-in" className="font-semibold text-ink underline decoration-volt decoration-2 underline-offset-4 hover:decoration-ink">
           Sign in
         </Link>
       </p>

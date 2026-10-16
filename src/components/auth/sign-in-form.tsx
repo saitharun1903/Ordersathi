@@ -85,7 +85,7 @@ export function SignInForm({ showDemo }: { showDemo: boolean }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-[-0.015em] text-ink">Sign in</h1>
+      <h1 className="text-[32px] font-bold leading-tight tracking-[-0.035em] text-ink">Sign in</h1>
       <p className="mt-1.5 text-sm text-muted">Welcome back. Pick up where your team left off.</p>
 
       <form
@@ -130,13 +130,13 @@ export function SignInForm({ showDemo }: { showDemo: boolean }) {
 
       <p className="mt-5 text-center text-sm text-muted">
         New to OrderSathi?{" "}
-        <Link href="/sign-up" className="font-medium text-brand underline-offset-4 hover:underline">
+        <Link href="/sign-up" className="font-semibold text-ink underline decoration-volt decoration-2 underline-offset-4 hover:decoration-ink">
           Create an account
         </Link>
       </p>
 
       {showDemo && (
-        <section id="sample" aria-labelledby="demo-heading" className="mt-8 scroll-mt-6 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] target:ring-2 target:ring-brand/40">
+        <section id="sample" aria-labelledby="demo-heading" className="mt-8 scroll-mt-6 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] target:ring-2 target:ring-volt">
           <div className="flex items-start gap-2.5">
             <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-warn-soft text-warn">
               <FlaskConical className="size-4" />

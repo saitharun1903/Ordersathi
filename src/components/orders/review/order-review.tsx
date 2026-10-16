@@ -86,9 +86,9 @@ export function OrderReview({ initial, customers, businessName, role }: { initia
           <ArrowLeft className="size-3.5" /> Orders
         </Link>
         <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="text-xl font-semibold tracking-[-0.01em] sm:text-[22px]">Order {num}</h1>
+          <h1 className="text-2xl font-bold tracking-[-0.035em] sm:text-[28px]">Order {num}</h1>
           <OrderStatusBadge status={view.status} />
-          {view.isDemo && <span className="rounded bg-warn-soft px-1.5 py-0.5 text-[10px] font-semibold uppercase text-warn">Demo data</span>}
+          {view.isDemo && <span className="rounded bg-volt px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase text-ink">Demo data</span>}
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
           <span className="inline-flex items-center gap-1">
@@ -264,11 +264,11 @@ export function OrderReview({ initial, customers, businessName, role }: { initia
 
       {/* Sticky approval bar */}
       {!closed && (
-        <div className="fixed inset-x-0 bottom-[calc(57px+env(safe-area-inset-bottom))] z-20 border-t border-line bg-surface/95 px-4 py-2.5 backdrop-blur lg:bottom-0 lg:left-[232px]">
+        <div className="fixed inset-x-0 bottom-[calc(57px+env(safe-area-inset-bottom))] z-20 border-t border-line bg-surface/95 px-4 py-2.5 backdrop-blur lg:bottom-0 lg:left-[240px]">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 lg:px-4">
             <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-faint">{view.blockers.length ? "Estimated total" : "Total"}</p>
-              <p className="text-lg font-semibold leading-tight tnum">{formatPaise(view.totalPaise)}</p>
+              <p className="font-mono text-[10.5px] font-medium uppercase tracking-[0.12em] text-muted">{view.blockers.length ? "Estimated total" : "Total"}</p>
+              <p className="font-display text-[22px] font-bold leading-tight tracking-[-0.03em] tnum">{formatPaise(view.totalPaise)}</p>
             </div>
             <div className="flex min-w-0 items-center gap-3">
               <p className="hidden truncate text-[13px] text-muted md:block">
@@ -277,7 +277,7 @@ export function OrderReview({ initial, customers, businessName, role }: { initia
               {view.permissions.canApprove ? (
                 <Tip content={view.blockers.length ? `To approve: ${view.blockers.join("; ")}` : null}>
                   <span tabIndex={canApproveNow ? -1 : 0}>
-                    <Button variant="primary" size="lg" disabled={!canApproveNow || pending !== null} onClick={() => setDialog("approve")}>
+                    <Button variant="volt" size="lg" disabled={!canApproveNow || pending !== null} onClick={() => setDialog("approve")}>
                       <CheckCircle2 /> Approve
                     </Button>
                   </span>

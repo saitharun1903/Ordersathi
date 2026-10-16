@@ -1,45 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans), "Noto Sans Telugu", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Instrument Sans Variable", "Noto Sans Telugu", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Noto Sans Telugu", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-canvas: #f6f4ee;
+  /* Bijli: ink, paper-white and an electric-yellow signal */
+  --color-canvas: #f4f4f1;
   --color-surface: #ffffff;
-  --color-surface-2: #fbfaf6;
-  --color-sunken: #f0ede5;
-  --color-line: #e6e1d6;
-  --color-line-strong: #d5cdbd;
-  --color-ink: #1d2320;
-  --color-ink-2: #454c47;
-  --color-muted: #6e756f;
-  --color-faint: #9aa097;
+  --color-surface-2: #fafaf8;
+  --color-sunken: #ededea;
+  --color-line: #e4e4df;
+  --color-line-strong: #cdcdc6;
+  --color-ink: #0f0f0e;
+  --color-ink-2: #3b3b38;
+  --color-muted: #6b6b66;
+  --color-faint: #9d9d97;
 
-  --color-brand: #0d5a45;
-  --color-brand-hover: #0a4a38;
-  --color-brand-soft: #e4efe9;
-  --color-brand-line: #b9d6c8;
-  --color-brand-ink: #0a4a38;
+  --color-brand: #0f0f0e;
+  --color-brand-hover: #2b2b29;
+  --color-brand-soft: #fff4b8;
+  --color-brand-line: #efd453;
+  --color-brand-ink: #0f0f0e;
 
-  --color-ok: #137250;
-  --color-ok-soft: #e5f1eb;
-  --color-warn: #9a5b0c;
-  --color-warn-strong: #c27d18;
-  --color-warn-soft: #fbf0d9;
-  --color-warn-line: #edd29b;
-  --color-bad: #a33d2b;
-  --color-bad-soft: #f8e6e1;
-  --color-bad-line: #e9bfb3;
-  --color-info: #2d5b86;
-  --color-info-soft: #e7eef6;
+  --color-volt: #ffd60a;
+  --color-volt-hover: #f4c900;
+  --color-volt-soft: #fff7cc;
+  --color-volt-ink: #4a3b00;
 
-  --shadow-card: 0 1px 0 rgb(29 35 32 / 0.04), 0 1px 2px rgb(29 35 32 / 0.04);
-  --shadow-pop: 0 10px 30px -10px rgb(29 35 32 / 0.25), 0 2px 6px rgb(29 35 32 / 0.08);
+  --color-night: #0f0f0e;
+  --color-night-2: #1b1b19;
+  --color-night-line: #2c2c29;
+
+  --color-ok: #137a49;
+  --color-ok-soft: #e6f4ec;
+  --color-ok-line: #b5dec7;
+  --color-warn: #b0450a;
+  --color-warn-strong: #f07a1a;
+  --color-warn-soft: #fff1e4;
+  --color-warn-line: #fbcda6;
+  --color-bad: #c2281b;
+  --color-bad-soft: #fdecea;
+  --color-bad-line: #f4c0ba;
+  --color-info: #1c5cc2;
+  --color-info-soft: #eaf1fd;
+  --color-info-line: #c4d6f5;
+
+  --shadow-card: 0 1px 0 rgb(15 15 14 / 0.03);
+  --shadow-pop: 0 18px 40px -18px rgb(15 15 14 / 0.35), 0 2px 6px rgb(15 15 14 / 0.06);
+  --shadow-lift: 0 1px 0 rgb(15 15 14 / 0.04), 0 10px 30px -14px rgb(15 15 14 / 0.18);
 
   --animate-fade-in: fade-in 160ms ease-out;
   --animate-slide-up: slide-up 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-slide-in-right: slide-in-right 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
 
   @keyframes fade-in {
     from { opacity: 0; }
@@ -68,14 +88,18 @@
     background: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+  }
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
   :focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
   ::selection {
-    background: #cfe5d9;
+    background: #fff08a;
   }
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
@@ -85,6 +109,16 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+}
+
+/* Highlighter-pen mark, the brand's signature gesture. */
+@utility marker {
+  background-image: linear-gradient(var(--color-volt), var(--color-volt));
+  background-size: 100% 0.42em;
+  background-position: 0 86%;
+  background-repeat: no-repeat;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 @utility tnum {

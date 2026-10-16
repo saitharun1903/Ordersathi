@@ -5,30 +5,30 @@ const BARS = [6, 10, 14, 9, 18, 22, 12, 8, 16, 20, 11, 7, 13, 19, 15, 9, 6, 12, 
 /** Static, illustrative product preview shown beside the auth forms (lg+ only). */
 export function ProductPanel() {
   return (
-    <aside aria-hidden className="relative hidden overflow-hidden bg-[#0d5a45] lg:flex lg:flex-col lg:justify-center lg:px-12 xl:px-20">
+    <aside aria-hidden className="relative hidden overflow-hidden bg-night lg:flex lg:flex-col lg:justify-center lg:px-12 xl:px-20">
       {/* faint grid texture */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
         style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "32px 32px" }}
       />
       <div className="relative mx-auto w-full max-w-[460px]">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#a9d3c1]">How it works</p>
-        <h2 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.015em] text-white">
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-volt">How it works</p>
+        <h2 className="mt-3 text-[34px] font-bold leading-[1.05] tracking-[-0.035em] text-white">
           A voice note in. A clean, reviewed order out.
         </h2>
-        <p className="mt-3 text-[15px] leading-relaxed text-[#cfe5d9]">
+        <p className="mt-3 text-[15px] leading-relaxed text-white/65">
           OrderSathi reads WhatsApp voice notes, photos of handwritten lists and typed messages, matches them to your catalogue, and flags anything it is unsure about.
         </p>
 
-        <div className="mt-8 rounded-2xl bg-[#f6f4ee] p-4 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)]">
+        <div className="mt-8 rounded-2xl bg-white p-4 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.6)]">
           {/* voice note */}
           <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2.5">
-            <span className="flex size-8 items-center justify-center rounded-full bg-brand text-white">
+            <span className="flex size-8 items-center justify-center rounded-full bg-volt text-ink">
               <Mic className="size-4" />
             </span>
             <div className="flex h-6 flex-1 items-center gap-[3px]">
               {BARS.map((h, i) => (
-                <span key={i} className="w-[3px] rounded-full bg-brand/60" style={{ height: h }} />
+                <span key={i} className="w-[3px] rounded-full bg-ink/70" style={{ height: h }} />
               ))}
             </div>
             <span className="text-xs text-muted tnum">0:18</span>
@@ -59,8 +59,8 @@ export function ProductPanel() {
           </div>
         </div>
 
-        <p className="mt-6 flex items-center gap-2 text-[13px] text-[#cfe5d9]">
-          <ShieldCheck className="size-4 text-[#e3a43b]" />
+        <p className="mt-6 flex items-center gap-2 text-[13px] text-white/65">
+          <ShieldCheck className="size-4 text-volt" />
           Nothing is confirmed until someone on your team approves it.
         </p>
       </div>

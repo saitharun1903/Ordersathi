@@ -34,7 +34,7 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
         ) : (
           <>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand">Invitation</p>
-            <h1 className="mt-2 text-xl font-semibold tracking-[-0.01em]">Join {invite.workspaceName}</h1>
+            <h1 className="mt-2 text-2xl font-bold tracking-[-0.03em]">Join {invite.workspaceName}</h1>
             <p className="mt-2 text-sm text-ink-2">
               You’ve been invited as <span className="font-semibold">{ROLE_LABEL[invite.role]}</span> — {ROLE_DESCRIPTION[invite.role].toLowerCase()}.
             </p>

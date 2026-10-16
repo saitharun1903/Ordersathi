@@ -29,8 +29,8 @@ const NETWORK_ERROR = "Could not reach OrderSathi. Check your connection and try
 function StepHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: React.ReactNode }) {
   return (
     <div className="mb-6">
-      <p className="text-xs font-medium uppercase tracking-[0.12em] text-brand">{eyebrow}</p>
-      <h1 className="mt-1.5 text-[22px] font-semibold tracking-[-0.015em] text-ink sm:text-2xl">{title}</h1>
+      <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">{eyebrow}</p>
+      <h1 className="mt-1.5 text-[26px] font-bold tracking-[-0.03em] text-ink sm:text-[30px]">{title}</h1>
       <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted">{description}</p>
     </div>
   );
@@ -140,7 +140,7 @@ function LanguageRadios({ value, onChange, disabled }: { value: LanguageCode; on
               value === o.value ? "border-brand bg-brand-soft/40" : "border-line-strong hover:border-ink/25",
             )}
           >
-            <input type="radio" name="preferredLanguage" value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} className="mt-0.5 accent-[#0d5a45]" />
+            <input type="radio" name="preferredLanguage" value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} className="mt-0.5 accent-[#0f0f0e]" />
             <span>
               <span className="block text-[13px] font-medium text-ink">{o.label}</span>
               <span className="block text-[12px] text-muted">{o.hint}</span>

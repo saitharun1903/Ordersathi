@@ -162,7 +162,7 @@ export default async function OrdersPage(props: PageProps<"/orders">) {
                   return (
                     <tr key={o.id} className="group relative border-b border-line last:border-0 hover:bg-surface-2">
                       <td className="px-4 py-3">
-                        <Link href={`/orders/${o.id}`} className="font-mono text-[12.5px] font-semibold text-ink after:absolute after:inset-0 focus-visible:outline-none group-focus-within:underline">
+                        <Link href={`/orders/${o.id}`} className="font-mono text-[12.5px] font-medium text-ink after:absolute after:inset-0 focus-visible:outline-none group-focus-within:underline">
                           #{String(o.number).padStart(4, "0")}
                         </Link>
                       </td>
