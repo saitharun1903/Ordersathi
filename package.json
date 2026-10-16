@@ -14,7 +14,9 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "NODE_OPTIONS=--conditions=react-server tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force --skip-seed && npm run db:seed",
-    "retention:purge": "NODE_OPTIONS=--conditions=react-server tsx scripts/purge-retention.ts"
+    "retention:purge": "NODE_OPTIONS=--conditions=react-server tsx scripts/purge-retention.ts",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma migrate deploy && npm run db:seed -- --if-missing && next build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

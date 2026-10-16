@@ -38,6 +38,22 @@ Password for all three: `ordersathi-demo` (one-click buttons on the sign-in page
 `SHOW_DEMO_LOGIN=false`). New users can also click **Explore the sample workspace** during onboarding
 to get a private copy, separate from their live workspace.
 
+## Deploy to Vercel
+
+1. **Import** the GitHub repo at <https://vercel.com/new> (framework: Next.js; no build settings to change —
+   Vercel runs `vercel-build`, which applies migrations, seeds the sample workspace if it is missing, and builds).
+2. **Add a Postgres database**: Project → Storage → *Neon* (Marketplace). This sets `DATABASE_URL` and
+   `DATABASE_URL_UNPOOLED` automatically.
+3. **Environment variables** (Project → Settings → Environment Variables):
+   - `BETTER_AUTH_SECRET` — `openssl rand -hex 32`
+   - `BETTER_AUTH_URL` — your production URL, e.g. `https://ordersathi.vercel.app`
+   - `CRON_SECRET` — any random string (protects the daily retention cron in `vercel.json`)
+   - optional: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` for live processing; `SHOW_DEMO_LOGIN=false` to hide demo logins
+4. **Redeploy** after adding the variables (the first build needs the database to exist).
+
+On Vercel, uploads are stored in Postgres (`STORAGE_DRIVER=database`, automatic) because functions have
+no persistent disk; processing runs after the response via `after()` with a 60 s function limit.
+
 ## Processing modes
 
 | Capability | Without keys (demo mode) | With keys (live) |

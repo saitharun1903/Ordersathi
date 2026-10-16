@@ -6,6 +6,9 @@ import { AppError } from "@/server/errors";
 import { getOrderView } from "@/server/orders/view";
 import { OrderReview } from "@/components/orders/review/order-review";
 
+// Processing runs after the response (next/server `after`) and needs time on serverless hosts.
+export const maxDuration = 60;
+
 export async function generateMetadata(props: PageProps<"/orders/[id]">): Promise<Metadata> {
   const { id } = await props.params;
   const ctx = await requirePageContext();

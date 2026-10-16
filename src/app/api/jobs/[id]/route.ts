@@ -5,6 +5,9 @@ import { notFound } from "@/server/errors";
 import { runJob } from "@/server/orders/pipeline";
 import { errorResponse } from "../../_respond";
 
+// Processing runs after the response (next/server `after`) and needs time on serverless hosts.
+export const maxDuration = 60;
+
 export async function GET(_req: Request, ctx: RouteContext<"/api/jobs/[id]">) {
   try {
     const c = await requireContext();

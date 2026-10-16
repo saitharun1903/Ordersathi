@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Files read at runtime: PDF fonts and the demo sample voice note / photo (fixture hashes + sample workspace).
+  outputFileTracingIncludes: {
+    "/**/*": ["./assets/fonts/**", "./public/samples/**"],
+  },
   serverExternalPackages: ["@prisma/client", "pdf-lib", "@pdf-lib/fontkit"],
   experimental: {
     serverActions: { bodySizeLimit: "4mb" },

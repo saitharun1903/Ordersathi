@@ -5,6 +5,9 @@ import { runJob } from "@/server/orders/pipeline";
 import { AppError } from "@/server/errors";
 import { errorResponse } from "../../_respond";
 
+// Processing runs after the response (next/server `after`) and needs time on serverless hosts.
+export const maxDuration = 60;
+
 // Multipart intake for text, audio and images. Uses XHR on the client for upload progress.
 export async function POST(request: Request) {
   try {

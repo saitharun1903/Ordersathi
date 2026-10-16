@@ -25,6 +25,13 @@ async function upsertUser(email: string, name: string) {
 }
 
 async function main() {
+  if (process.argv.includes("--if-missing")) {
+    const owner = await prisma.user.findUnique({ where: { email: USERS[0].email }, include: { memberships: { include: { workspace: true } } } });
+    if (owner?.memberships.some((m) => m.workspace.isDemo)) {
+      console.log("Sample workspace already exists — skipping seed.");
+      return;
+    }
+  }
   const users = [];
   for (const u of USERS) users.push({ ...(await upsertUser(u.email, u.name)), role: u.role });
   const owner = users[0];

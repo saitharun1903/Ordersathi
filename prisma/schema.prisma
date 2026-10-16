@@ -8,7 +8,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
+  // Direct (non-pooled) connection for migrations. Locally this is the same as DATABASE_URL.
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ───────────────────────── Authentication (better-auth) ─────────────────────────
@@ -444,4 +446,15 @@ model AuditEvent {
 
   @@index([workspaceId, createdAt])
   @@index([orderId])
+}
+
+// Uploaded source files when STORAGE_DRIVER=database (used on serverless hosts such as Vercel).
+model StoredFile {
+  key         String   @id
+  workspaceId String
+  bytes       Bytes
+  sizeBytes   Int
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
 }

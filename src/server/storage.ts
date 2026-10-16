@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { prisma } from "@/lib/db";
 import { env } from "./env";
 import { AppError } from "./errors";
 
@@ -65,6 +66,14 @@ export function validateUpload(kind: "AUDIO" | "IMAGE", buf: Buffer) {
   return { mimeType: sniffed, ext: allowed[sniffed] };
 }
 
+// Driver: "local" writes to STORAGE_DIR; "database" stores bytes in Postgres (serverless hosts
+// such as Vercel have no persistent disk). Defaults to "database" on Vercel.
+function driver(): "local" | "database" {
+  const d = process.env.STORAGE_DRIVER;
+  if (d === "local" || d === "database") return d;
+  return process.env.VERCEL ? "database" : "local";
+}
+
 function root() {
   return path.resolve(/*turbopackIgnore: true*/ process.cwd(), env().STORAGE_DIR);
 }
@@ -78,17 +87,31 @@ function resolveKey(key: string) {
 export async function putObject(workspaceId: string, ext: string, buf: Buffer) {
   const month = new Date().toISOString().slice(0, 7);
   const key = `${workspaceId}/${month}/${randomUUID()}.${ext}`;
-  const full = resolveKey(key);
-  await mkdir(path.dirname(full), { recursive: true });
-  await writeFile(full, buf, { mode: 0o600 });
-  return { key, sha256: createHash("sha256").update(buf).digest("hex") };
+  const hash = createHash("sha256").update(buf).digest("hex");
+  if (driver() === "database") {
+    await prisma.storedFile.create({ data: { key, workspaceId, bytes: new Uint8Array(buf), sizeBytes: buf.length } });
+  } else {
+    const full = resolveKey(key);
+    await mkdir(path.dirname(full), { recursive: true });
+    await writeFile(full, buf, { mode: 0o600 });
+  }
+  return { key, sha256: hash };
 }
 
 export async function getObject(key: string) {
+  if (driver() === "database") {
+    const f = await prisma.storedFile.findUnique({ where: { key } });
+    if (!f) throw new AppError("NOT_FOUND", "File not found");
+    return Buffer.from(f.bytes);
+  }
   return readFile(resolveKey(key));
 }
 
 export async function deleteObject(key: string) {
+  if (driver() === "database") {
+    await prisma.storedFile.deleteMany({ where: { key } });
+    return;
+  }
   await rm(resolveKey(key), { force: true });
 }
 
