@@ -42,8 +42,9 @@ to get a private copy, separate from their live workspace.
 
 1. **Import** the GitHub repo at <https://vercel.com/new> (framework: Next.js; no build settings to change —
    Vercel runs `vercel-build`, which applies migrations, seeds the sample workspace if it is missing, and builds).
-2. **Add a Postgres database**: Project → Storage → *Neon* (Marketplace). This sets `DATABASE_URL` and
-   `DATABASE_URL_UNPOOLED` automatically.
+2. **Add a Postgres database**: Project → Storage → *Neon* (Marketplace) and connect it to Production and
+   Preview. Any Postgres works: the build accepts `DATABASE_URL`, `POSTGRES_PRISMA_URL` or `POSTGRES_URL`
+   (plus `DATABASE_URL_UNPOOLED` / `POSTGRES_URL_NON_POOLING` for migrations, if present).
 3. **Environment variables** (Project → Settings → Environment Variables):
    - `BETTER_AUTH_SECRET` — `openssl rand -hex 32`
    - `BETTER_AUTH_URL` — your production URL, e.g. `https://ordersathi.vercel.app`
