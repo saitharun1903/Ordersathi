@@ -3,17 +3,24 @@ import { existsSync } from "node:fs";
 if (existsSync(".env") && !process.env.VERCEL) (await import("dotenv")).config();
 import { execSync } from "node:child_process";
 import path from "node:path";
-import { resolveDatabaseUrls } from "./db-url.mjs";
+import { databaseVarNames, resolveDatabaseUrls } from "./db-url.mjs";
 
-const { pooled, direct } = resolveDatabaseUrls();
+const { pooled, direct, pooledName, directName } = resolveDatabaseUrls();
+const vercelEnv = process.env.VERCEL_ENV ?? "local";
 if (!pooled) {
+  const seen = databaseVarNames();
   console.error(
-    "\n✖ No database configured.\n" +
-      "  Add Postgres in Vercel: Project → Storage → Neon (or set DATABASE_URL in Environment Variables),\n" +
-      "  make sure it is connected to this environment (Production/Preview), then redeploy.\n",
+    `\n✖ No database URL found for this "${vercelEnv}" build.\n` +
+      `  Database-related variables visible to the build: ${seen.length ? seen.join(", ") : "none"}\n` +
+      `  Fix: Project → Storage → your Neon database → Settings/Projects → make sure this project is connected\n` +
+      `  for the "${vercelEnv}" environment (or add DATABASE_URL under Settings → Environment Variables for "${vercelEnv}").\n` +
+      "  Then start a new deployment of the latest commit.\n",
   );
   process.exit(1);
 }
+console.log(`Database: runtime uses ${pooledName}, migrations use ${directName} (${vercelEnv} build).`);
+// The app reads DATABASE_URL; map a prefixed or alternative name onto it for build steps.
+process.env.DATABASE_URL = pooled;
 const missing = ["BETTER_AUTH_SECRET"].filter((k) => !process.env[k]);
 if (missing.length) {
   console.error(`\n✖ Missing environment variables: ${missing.join(", ")}. Add them in Project → Settings → Environment Variables, then redeploy.\n`);
