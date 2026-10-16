@@ -19,7 +19,7 @@ const ROLES: Role[] = ["OWNER", "MANAGER", "OPERATOR"];
 export type TeamData = {
   currentUserId: string;
   members: { id: string; role: Role; userId: string; name: string; email: string }[];
-  invites: { id: string; email: string; role: Role; createdAt: string }[];
+  invites: { id: string; email: string; role: Role; createdAt: string; token: string | null }[];
 };
 
 const dateFmt = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
@@ -28,7 +28,7 @@ export function TeamSection({ data, canManage }: { data: TeamData; canManage: bo
   return (
     <div className="flex flex-col gap-5">
       <MembersCard data={data} canManage={canManage} />
-      {canManage ? <InviteCard /> : <ReadOnlyNote>Only owners can invite people or change roles.</ReadOnlyNote>}
+      {canManage ? <InviteCard /> : <ReadOnlyNote>Only owners can invite people or change roles. Sample workspaces are read-only.</ReadOnlyNote>}
       {data.invites.length > 0 && <InvitesCard invites={data.invites} canManage={canManage} />}
       <PermissionsMatrix />
     </div>
@@ -183,10 +183,11 @@ function InviteCard() {
         toast.error("Invitation not sent", { description: r.message });
         return;
       }
-      toast.success(
-        r.data.added ? `${email.trim()} already had an account and was added as ${ROLE_LABEL[role]}.` : `Invitation saved for ${email.trim()}.`,
-        r.data.added ? undefined : { description: "They join automatically when they sign up with this email." },
-      );
+      const link = inviteUrl(r.data.token);
+      const copied = await navigator.clipboard?.writeText(link).then(() => true).catch(() => false);
+      toast.success(`Invitation created for ${email.trim()}`, {
+        description: copied ? "Invite link copied — send it to them on WhatsApp or email." : "Copy the invite link from Pending invitations and send it to them.",
+      });
       setEmail("");
       router.refresh();
     } catch {
@@ -201,7 +202,7 @@ function InviteCard() {
     <Card>
       <CardHeader
         title="Invite someone"
-        description="Invited people join automatically when they sign up (or sign in) with that email. OrderSathi doesn't send the email — share the sign-up link with them yourself."
+        description="Each invitation is a private link, valid for 14 days. OrderSathi doesn't send emails — share the link yourself. Anyone with the link can join, so send it only to that person."
       />
       <form noValidate onSubmit={submit} className="flex flex-col gap-4 p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
@@ -231,6 +232,10 @@ function InviteCard() {
   );
 }
 
+function inviteUrl(token: string) {
+  return `${window.location.origin}/invite/${token}`;
+}
+
 function InvitesCard({ invites, canManage }: { invites: TeamData["invites"]; canManage: boolean }) {
   const router = useRouter();
   const [pending, setPending] = React.useState<string | null>(null);
@@ -253,7 +258,7 @@ function InvitesCard({ invites, canManage }: { invites: TeamData["invites"]; can
 
   return (
     <Card>
-      <CardHeader title="Pending invitations" description="These people haven't signed up yet." />
+      <CardHeader title="Pending invitations" description="Links stay valid for 14 days or until used." />
       <ul className="divide-y divide-line">
         {invites.map((i) => (
           <li key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 sm:px-5">
@@ -262,6 +267,19 @@ function InvitesCard({ invites, canManage }: { invites: TeamData["invites"]; can
               <p className="text-[12px] text-muted">Invited {dateFmt.format(new Date(i.createdAt))}</p>
             </div>
             <Pill>{ROLE_LABEL[i.role]}</Pill>
+            {canManage && i.token && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  const ok = await navigator.clipboard?.writeText(inviteUrl(i.token!)).then(() => true).catch(() => false);
+                  if (ok) toast.success("Invite link copied");
+                  else window.prompt("Copy this invite link:", inviteUrl(i.token!));
+                }}
+              >
+                Copy link
+              </Button>
+            )}
             {canManage && (
               <Button variant="ghost" size="sm" loading={pending === i.id} onClick={() => revoke(i.id, i.email)} aria-label={`Revoke invitation for ${i.email}`}>
                 {pending !== i.id && <X aria-hidden />} Revoke

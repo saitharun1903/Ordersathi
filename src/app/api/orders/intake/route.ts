@@ -1,12 +1,12 @@
 import { after, NextResponse } from "next/server";
 import { requireContext } from "@/server/context";
 import { createIntake } from "@/server/orders/service";
-import { runJob } from "@/server/orders/pipeline";
+import { runJobSafely } from "@/server/orders/pipeline";
 import { AppError } from "@/server/errors";
 import { errorResponse } from "../../_respond";
 
 // Processing runs after the response (next/server `after`) and needs time on serverless hosts.
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // Multipart intake for text, audio and images. Uses XHR on the client for upload progress.
 export async function POST(request: Request) {
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     );
     if (result.jobId && !result.deduped) {
       const jobId = result.jobId;
-      after(() => runJob(jobId));
+      after(() => runJobSafely(jobId));
     }
     return NextResponse.json({ ok: true, data: result }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {

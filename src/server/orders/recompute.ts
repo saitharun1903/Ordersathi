@@ -2,9 +2,13 @@ import "server-only";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { computeTotals, evaluateLine, type LineIssue, type LineStatusValue } from "./evaluate";
 import { effectivePrices } from "./catalogue-load";
+import { AppError } from "../errors";
 import type { MatchNote } from "./match";
 
 type Tx = Prisma.TransactionClient;
+
+/** Order totals are stored as 32-bit integers of paise (max ≈ ₹2.1 crore). */
+const MAX_ORDER_TOTAL_PAISE = 2_000_000_000;
 
 export type LineExtracted = {
   note?: MatchNote | null;
@@ -92,6 +96,9 @@ export async function recomputeOrder(tx: Tx, workspaceId: string, orderId: strin
   }
 
   const totals = computeTotals(evaluated.map((e) => e.total), order.workspace.taxRateBps);
+  if (totals.total > MAX_ORDER_TOTAL_PAISE) {
+    throw new AppError("VALIDATION", "This order’s total is over ₹2 crore. Split it into smaller orders.");
+  }
   const status = deriveStatus(evaluated, order.customerId);
   return tx.order.update({
     where: { id: order.id },

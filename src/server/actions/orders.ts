@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { run } from "./run";
 import * as svc from "../orders/service";
 import { getOrderView } from "../orders/view";
-import { runJob } from "../orders/pipeline";
+import { runJobSafely } from "../orders/pipeline";
 import { searchCatalogue } from "../catalogue/service";
 
 // Every mutation returns the fresh order view so the review screen updates in place.
@@ -51,7 +51,7 @@ export async function saveTranscriptAction(orderId: string, version: number, tra
 export async function reprocessAction(orderId: string, version: number, transcript?: string) {
   return run("order.reprocess", async (ctx) => {
     const { jobId } = await svc.reprocessOrder(ctx, orderId, version, transcript);
-    after(() => runJob(jobId));
+    after(() => runJobSafely(jobId));
     return getOrderView(ctx, orderId);
   });
 }
@@ -59,7 +59,7 @@ export async function reprocessAction(orderId: string, version: number, transcri
 export async function retryJobAction(orderId: string, jobId: string, useRules = false) {
   return run("job.retry", async (ctx) => {
     await svc.retryJob(ctx, jobId, { useRules });
-    after(() => runJob(jobId));
+    after(() => runJobSafely(jobId));
     return getOrderView(ctx, orderId);
   });
 }

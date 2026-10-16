@@ -1,5 +1,6 @@
 import "server-only";
-import type { Role } from "@prisma/client";
+import { randomBytes } from "node:crypto";
+import type { Prisma, Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { Ctx } from "../context";
@@ -60,6 +61,7 @@ export async function createWorkspace(user: { id: string; name: string }, raw: u
 
 export async function updateSettings(ctx: Ctx, raw: unknown) {
   assertCan(ctx.role, "settings.manage");
+  assertNotSample(ctx);
   const r = SettingsInputSchema.safeParse(raw);
   if (!r.success) throw new AppError("VALIDATION", "Check the highlighted fields.", fieldErrors(r.error));
   const { taxRatePercent, ...rest } = r.data;
@@ -71,11 +73,14 @@ export async function updateSettings(ctx: Ctx, raw: unknown) {
 }
 
 export async function setOnboardingStep(ctx: Ctx, step: number) {
-  await prisma.workspace.updateMany({ where: { id: ctx.workspaceId }, data: { onboardingStep: step } });
+  assertCan(ctx.role, "settings.manage");
+  const s = z.number().int().min(0).max(5).parse(step);
+  await prisma.workspace.updateMany({ where: { id: ctx.workspaceId }, data: { onboardingStep: s } });
 }
 
 export async function updateRetention(ctx: Ctx, days: number) {
   assertCan(ctx.role, "settings.manage");
+  assertNotSample(ctx);
   if (!Number.isInteger(days) || days < 7 || days > 3650) throw new AppError("VALIDATION", "Choose between 7 and 3650 days.");
   await prisma.$transaction(async (tx) => {
     await tx.workspace.update({ where: { id: ctx.workspaceId }, data: { sourceRetentionDays: days } });
@@ -104,35 +109,43 @@ export async function runPurgeNow(ctx: Ctx) {
 
 // ───────────────────────── Team ─────────────────────────
 
+const INVITE_TTL_DAYS = 14;
+
+function assertNotSample(ctx: Ctx) {
+  if (ctx.isDemo) throw new AppError("INVALID_STATE", "Sample workspaces can't change team or business settings. Create your own workspace to do that.");
+}
+
 export async function listTeam(ctx: Ctx) {
   const [members, invites] = await Promise.all([
     prisma.membership.findMany({ where: { workspaceId: ctx.workspaceId }, include: { user: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: "asc" } }),
-    prisma.invitation.findMany({ where: { workspaceId: ctx.workspaceId, acceptedAt: null, revokedAt: null }, orderBy: { createdAt: "desc" } }),
+    prisma.invitation.findMany({
+      where: { workspaceId: ctx.workspaceId, acceptedAt: null, revokedAt: null, createdAt: { gt: new Date(Date.now() - INVITE_TTL_DAYS * 86400_000) } },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
   return { members, invites };
 }
 
 const InviteSchema = z.object({ email: z.string().trim().toLowerCase().email("Enter a valid email"), role: z.enum(["OWNER", "MANAGER", "OPERATOR"]) });
 
+/**
+ * Creates a pending invitation with a secret link. Nobody is added until they open the
+ * link while signed in — email addresses are not verified, so they are never proof of identity.
+ */
 export async function inviteMember(ctx: Ctx, raw: unknown) {
   assertCan(ctx.role, "team.manage");
+  assertNotSample(ctx);
   const r = InviteSchema.safeParse(raw);
   if (!r.success) throw new AppError("VALIDATION", "Check the highlighted fields.", fieldErrors(r.error));
   const { email, role } = r.data;
-  const user = await prisma.user.findUnique({ where: { email } });
   return prisma.$transaction(async (tx) => {
-    if (user) {
-      const existing = await tx.membership.findUnique({ where: { workspaceId_userId: { workspaceId: ctx.workspaceId, userId: user.id } } });
-      if (existing) throw new AppError("VALIDATION", "This person is already a member.", { email: "Already a member" });
-      await tx.membership.create({ data: { workspaceId: ctx.workspaceId, userId: user.id, role } });
-      await audit(tx, ctx, "team.member_added", { email, role });
-      return { added: true };
-    }
-    const pending = await tx.invitation.findFirst({ where: { workspaceId: ctx.workspaceId, email, acceptedAt: null, revokedAt: null } });
-    if (pending) throw new AppError("VALIDATION", "An invitation is already pending for this email.", { email: "Already invited" });
-    await tx.invitation.create({ data: { workspaceId: ctx.workspaceId, email, role, invitedById: ctx.userId } });
+    const member = await tx.membership.findFirst({ where: { workspaceId: ctx.workspaceId, user: { email } } });
+    if (member) throw new AppError("VALIDATION", "This person is already a member.", { email: "Already a member" });
+    await tx.invitation.updateMany({ where: { workspaceId: ctx.workspaceId, email, acceptedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
+    const token = randomBytes(24).toString("base64url");
+    await tx.invitation.create({ data: { workspaceId: ctx.workspaceId, email, role, invitedById: ctx.userId, token } });
     await audit(tx, ctx, "team.invited", { email, role });
-    return { added: false };
+    return { token };
   });
 }
 
@@ -142,43 +155,57 @@ export async function revokeInvite(ctx: Ctx, id: string) {
   if (!r.count) throw notFound("Invitation");
 }
 
-async function ownerCount(workspaceId: string) {
-  return prisma.membership.count({ where: { workspaceId, role: "OWNER" } });
+/** Public details for the invite page (no secrets beyond what the link holder already has). */
+export async function getInvite(token: string) {
+  const inv = await prisma.invitation.findUnique({ where: { token }, include: { workspace: { select: { name: true } } } });
+  if (!inv || inv.revokedAt || inv.acceptedAt || inv.createdAt < new Date(Date.now() - INVITE_TTL_DAYS * 86400_000)) return null;
+  return { workspaceName: inv.workspace.name, role: inv.role, email: inv.email };
+}
+
+export async function acceptInvite(user: { id: string; name: string }, token: string) {
+  return prisma.$transaction(async (tx) => {
+    const inv = await tx.invitation.findUnique({ where: { token } });
+    if (!inv || inv.revokedAt || inv.acceptedAt || inv.createdAt < new Date(Date.now() - INVITE_TTL_DAYS * 86400_000)) {
+      throw new AppError("NOT_FOUND", "This invitation link is no longer valid. Ask the owner for a new one.");
+    }
+    const claimed = await tx.invitation.updateMany({ where: { id: inv.id, acceptedAt: null }, data: { acceptedAt: new Date() } });
+    if (!claimed.count) throw new AppError("CONFLICT", "This invitation was already used.");
+    const exists = await tx.membership.findUnique({ where: { workspaceId_userId: { workspaceId: inv.workspaceId, userId: user.id } } });
+    if (!exists) await tx.membership.create({ data: { workspaceId: inv.workspaceId, userId: user.id, role: inv.role } });
+    await tx.auditEvent.create({ data: { workspaceId: inv.workspaceId, actorId: user.id, actorName: user.name, type: "team.invite_accepted", data: { role: inv.role } } });
+    return inv.workspaceId;
+  });
+}
+
+/** Owner changes run serializably so two owners can't demote each other at the same time. */
+async function withOwnerGuard(ctx: Ctx, fn: (tx: Prisma.TransactionClient) => Promise<void>) {
+  await prisma.$transaction(
+    async (tx) => {
+      await fn(tx);
+      const owners = await tx.membership.count({ where: { workspaceId: ctx.workspaceId, role: "OWNER" } });
+      if (owners < 1) throw new AppError("INVALID_STATE", "A workspace needs at least one owner.");
+    },
+    { isolationLevel: "Serializable" },
+  );
 }
 
 export async function changeRole(ctx: Ctx, membershipId: string, role: Role) {
   assertCan(ctx.role, "team.manage");
-  const m = await prisma.membership.findFirst({ where: { id: membershipId, workspaceId: ctx.workspaceId } });
-  if (!m) throw notFound("Member");
-  if (m.role === "OWNER" && role !== "OWNER" && (await ownerCount(ctx.workspaceId)) <= 1) {
-    throw new AppError("INVALID_STATE", "A workspace needs at least one owner.");
-  }
-  await prisma.$transaction(async (tx) => {
-    await tx.membership.update({ where: { id: m.id }, data: { role } });
+  assertNotSample(ctx);
+  if (!["OWNER", "MANAGER", "OPERATOR"].includes(role)) throw new AppError("VALIDATION", "Unknown role.");
+  await withOwnerGuard(ctx, async (tx) => {
+    const r = await tx.membership.updateMany({ where: { id: membershipId, workspaceId: ctx.workspaceId }, data: { role } });
+    if (!r.count) throw notFound("Member");
     await audit(tx, ctx, "team.role_changed", { membershipId, role });
   });
 }
 
 export async function removeMember(ctx: Ctx, membershipId: string) {
   assertCan(ctx.role, "team.manage");
-  const m = await prisma.membership.findFirst({ where: { id: membershipId, workspaceId: ctx.workspaceId } });
-  if (!m) throw notFound("Member");
-  if (m.role === "OWNER" && (await ownerCount(ctx.workspaceId)) <= 1) throw new AppError("INVALID_STATE", "A workspace needs at least one owner.");
-  await prisma.$transaction(async (tx) => {
-    await tx.membership.delete({ where: { id: m.id } });
+  assertNotSample(ctx);
+  await withOwnerGuard(ctx, async (tx) => {
+    const r = await tx.membership.deleteMany({ where: { id: membershipId, workspaceId: ctx.workspaceId } });
+    if (!r.count) throw notFound("Member");
     await audit(tx, ctx, "team.member_removed", { membershipId });
   });
-}
-
-/** Accept pending invitations addressed to this user's email. */
-export async function acceptInvitesFor(user: { id: string; email: string }) {
-  const invites = await prisma.invitation.findMany({ where: { email: user.email.toLowerCase(), acceptedAt: null, revokedAt: null } });
-  for (const inv of invites) {
-    await prisma.$transaction(async (tx) => {
-      const exists = await tx.membership.findUnique({ where: { workspaceId_userId: { workspaceId: inv.workspaceId, userId: user.id } } });
-      if (!exists) await tx.membership.create({ data: { workspaceId: inv.workspaceId, userId: user.id, role: inv.role } });
-      await tx.invitation.update({ where: { id: inv.id }, data: { acceptedAt: new Date() } });
-    });
-  }
-  return invites.length;
 }

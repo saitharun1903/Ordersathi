@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Select, Textarea } from "@/components/ui/field";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { compressImage } from "@/lib/image-compress";
 
 type Customer = { id: string; name: string; city: string | null; preferredLanguage: string };
 type Sample = { id: string; kind: "AUDIO" | "IMAGE"; file: string; title: string; description: string };
@@ -43,6 +44,8 @@ export function NewOrderForm({
   imageLive,
   extractionLabel,
   samples,
+  maxAudioMb,
+  maxImageMb,
 }: {
   customers: Customer[];
   initialCustomerId: string | null;
@@ -50,6 +53,8 @@ export function NewOrderForm({
   imageLive: boolean;
   extractionLabel: string;
   samples: Sample[];
+  maxAudioMb: number;
+  maxImageMb: number;
 }) {
   const router = useRouter();
   const [mode, setMode] = React.useState<Mode>("TEXT");
@@ -109,6 +114,17 @@ export function NewOrderForm({
     if (!ready) {
       setFieldError(mode === "TEXT" ? "Paste or type the order message." : mode === "AUDIO" ? "Record or attach a voice note." : "Attach a photo of the list.");
       return;
+    }
+    if (file) {
+      const maxMb = mode === "AUDIO" ? maxAudioMb : maxImageMb;
+      if (file.size > maxMb * 1024 * 1024) {
+        setFieldError(
+          mode === "AUDIO"
+            ? `This recording is ${(file.size / 1048576).toFixed(1)} MB — the limit is ${maxMb} MB. Send a shorter clip (WhatsApp voice notes are usually well under 1 MB).`
+            : `This photo is ${(file.size / 1048576).toFixed(1)} MB — the limit is ${maxMb} MB. Try a smaller photo or a screenshot of the list.`,
+        );
+        return;
+      }
     }
     setFieldError(null);
     const fd = new FormData();
@@ -256,8 +272,8 @@ export function NewOrderForm({
               </div>
             </div>
           )}
-          {mode === "AUDIO" && <AudioInput file={audio} onFile={setAudio} disabled={busy} live={audioLive} samples={samples.filter((s) => s.kind === "AUDIO")} onSample={loadSample} />}
-          {mode === "IMAGE" && <ImageInput file={image} onFile={setImage} disabled={busy} live={imageLive} samples={samples.filter((s) => s.kind === "IMAGE")} onSample={loadSample} />}
+          {mode === "AUDIO" && <AudioInput maxMb={maxAudioMb} file={audio} onFile={setAudio} disabled={busy} live={audioLive} samples={samples.filter((s) => s.kind === "AUDIO")} onSample={loadSample} />}
+          {mode === "IMAGE" && <ImageInput file={image} onFile={(f) => (f ? void compressImage(f).then(setImage) : setImage(null))} disabled={busy} live={imageLive} samples={samples.filter((s) => s.kind === "IMAGE")} onSample={loadSample} />}
           {fieldError && (
             <p id="input-error" role="alert" className="mt-2 text-xs text-bad">
               {fieldError}
@@ -409,7 +425,7 @@ function DropZone({ accept, onFile, disabled, children, capture }: { accept: str
   );
 }
 
-function AudioInput({ file, onFile, disabled, live, samples, onSample }: { file: File | null; onFile: (f: File | null) => void; disabled?: boolean; live: boolean; samples: Sample[]; onSample: (s: Sample) => void }) {
+function AudioInput({ file, onFile, disabled, live, samples, onSample, maxMb }: { maxMb: number; file: File | null; onFile: (f: File | null) => void; disabled?: boolean; live: boolean; samples: Sample[]; onSample: (s: Sample) => void }) {
   // Only rendered client-side after the user picks the voice tab, so reading browser APIs here is safe.
   const [supported] = React.useState<boolean>(() => typeof window !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined");
   const [recording, setRecording] = React.useState(false);
@@ -497,7 +513,7 @@ function AudioInput({ file, onFile, disabled, live, samples, onSample }: { file:
           )}
           <DropZone accept="audio/*,.mp3,.m4a,.wav,.ogg,.opus,.webm,.aac" onFile={onFile} disabled={disabled || recording}>
             <p className="text-[13px] font-medium">Or upload a voice note</p>
-            <p className="mt-0.5 text-xs text-muted">MP3, M4A, WAV, OGG, OPUS or WebM · forwarded WhatsApp voice notes work</p>
+            <p className="mt-0.5 text-xs text-muted">MP3, M4A, WAV, OGG, OPUS or WebM · forwarded WhatsApp voice notes work · up to {maxMb} MB</p>
           </DropZone>
           <SampleButtons samples={samples} onSample={onSample} disabled={disabled} />
         </>
@@ -528,7 +544,7 @@ function ImageInput({ file, onFile, disabled, live, samples, onSample }: { file:
           <DropZone accept="image/jpeg,image/png,image/webp" onFile={onFile} disabled={disabled} capture>
             <ImageIcon className="mx-auto mb-2 size-6 text-muted" />
             <p className="text-[13px] font-medium">Drop a photo of the handwritten or printed list</p>
-            <p className="mt-0.5 text-xs text-muted">JPG, PNG or WebP · up to 10 MB</p>
+            <p className="mt-0.5 text-xs text-muted">JPG, PNG or WebP · large photos are resized automatically</p>
           </DropZone>
           <SampleButtons samples={samples} onSample={onSample} disabled={disabled} />
         </>

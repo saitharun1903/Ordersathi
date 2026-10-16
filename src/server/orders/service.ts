@@ -135,7 +135,8 @@ export async function retryJob(ctx: Ctx, jobId: string, opts: { useRules?: boole
   await assertProcessingBudget(ctx);
   const updated = await prisma.processingJob.updateMany({
     where: { id: jobId, status: "FAILED" },
-    data: { status: "QUEUED", stage: "STORED", errorCode: null, errorMessage: null, finishedAt: null, provider: opts.useRules ? "rules" : job.provider },
+    // A manual retry starts a fresh set of attempts.
+    data: { status: "QUEUED", stage: "STORED", attempts: 0, errorCode: null, errorMessage: null, finishedAt: null, provider: opts.useRules ? "rules" : job.provider },
   });
   if (!updated.count) throw conflict("This job was already retried.");
   await prisma.auditEvent.create({
@@ -160,13 +161,23 @@ async function mutate<T>(
     if (order.status === "APPROVED" || order.status === "REJECTED") {
       throw new AppError("INVALID_STATE", `This order is ${order.status.toLowerCase()} and can no longer be edited.`);
     }
+    await assertNotProcessing(tx, orderId);
     const claimed = await tx.order.updateMany({ where: { id: orderId, version }, data: { version: { increment: 1 } } });
     if (!claimed.count) throw conflict();
     const result = await fn(tx, order);
     await recomputeOrder(tx, ctx.workspaceId, orderId, { repriceAll: opts.repriceAll });
     await audit(tx, ctx, opts.auditType, opts.auditData ?? {}, orderId);
     return result;
-  });
+  }, TX_OPTS);
+}
+
+// Interactive transactions recompute every line; allow for database round-trip latency.
+const TX_OPTS = { timeout: 20_000, maxWait: 10_000 };
+
+/** Edits made while a processing job runs would be overwritten when it finishes. */
+async function assertNotProcessing(tx: Tx, orderId: string) {
+  const running = await tx.processingJob.count({ where: { orderId, status: { in: ["QUEUED", "RUNNING"] } } });
+  if (running) throw new AppError("INVALID_STATE", "This order is still being processed. Wait for it to finish, then make changes.");
 }
 
 const QuantitySchema = z
@@ -364,6 +375,8 @@ export async function approveOrder(ctx: Ctx, orderId: string, version: number) {
       return { alreadyApproved: true as const, approvedAt: order.approvedAt };
     }
     if (order.status === "REJECTED") throw new AppError("INVALID_STATE", "Rejected orders can't be approved.");
+    await assertNotProcessing(tx, orderId);
+    if (order.transcriptDirty) throw new AppError("INVALID_STATE", "The transcript was edited but not reprocessed. Reprocess it (or discard the edit) before approving.");
     const claimed = await tx.order.updateMany({ where: { id: orderId, version }, data: { version: { increment: 1 } } });
     if (!claimed.count) throw conflict();
 
@@ -431,7 +444,7 @@ export async function approveOrder(ctx: Ctx, orderId: string, version: number) {
     if (!done.count) throw conflict();
     await audit(tx, ctx, "order.approved", { totalPaise: full.totalPaise }, orderId);
     return { alreadyApproved: false as const, approvedAt: now };
-  });
+  }, TX_OPTS);
 }
 
 export async function rejectOrder(ctx: Ctx, orderId: string, version: number, reason: string) {
@@ -466,8 +479,9 @@ export async function reopenOrder(ctx: Ctx, orderId: string, version: number) {
 
 // ───────────────────────── Clarifications & sharing ─────────────────────────
 
-export async function recordClarification(ctx: Ctx, orderId: string, message: string, status: "DRAFT" | "COPIED" | "SHARED") {
+export async function recordClarification(ctx: Ctx, orderId: string, message: string, rawStatus: "DRAFT" | "COPIED" | "SHARED") {
   assertCan(ctx.role, "order.edit");
+  const status = z.enum(["DRAFT", "COPIED", "SHARED"]).parse(rawStatus);
   const order = await prisma.order.findFirst({ where: { id: orderId, workspaceId: ctx.workspaceId }, select: { id: true } });
   if (!order) throw notFound("Order");
   const text = message.trim().slice(0, 4000);
@@ -479,8 +493,9 @@ export async function recordClarification(ctx: Ctx, orderId: string, message: st
   });
 }
 
-export async function recordShare(ctx: Ctx, orderId: string, channel: "COPY" | "WHATSAPP" | "PDF") {
+export async function recordShare(ctx: Ctx, orderId: string, rawChannel: "COPY" | "WHATSAPP" | "PDF") {
   assertCan(ctx.role, "order.view");
+  const channel = z.enum(["COPY", "WHATSAPP", "PDF"]).parse(rawChannel);
   const order = await prisma.order.findFirst({ where: { id: orderId, workspaceId: ctx.workspaceId }, select: { id: true, status: true } });
   if (!order) throw notFound("Order");
   if (order.status !== "APPROVED") throw new AppError("INVALID_STATE", "Only approved orders can be shared.");

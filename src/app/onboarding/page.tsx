@@ -8,7 +8,7 @@ import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 import { SignOutButton } from "@/components/onboarding/sign-out-button";
 
 // Processing runs after the response (next/server `after`) and needs time on serverless hosts.
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export const metadata: Metadata = { title: "Set up your workspace" };
 

@@ -33,7 +33,9 @@ async function fonts() {
 /** Drop characters the embedded font cannot draw (e.g. Telugu script) instead of printing boxes. */
 function safe(font: PDFFont, text: string) {
   const supported = new Set(font.getCharacterSet());
-  return [...text].map((ch) => (supported.has(ch.codePointAt(0)!) ? ch : "")).join("").replace(/\s+/g, " ").trim();
+  const out = [...text].map((ch) => (supported.has(ch.codePointAt(0)!) ? ch : "")).join("").replace(/\s+/g, " ").trim();
+  // Text entirely in an unsupported script (e.g. a Telugu-only shop name) gets a visible placeholder, not a blank.
+  return out || (text.trim() ? "(name in Telugu)" : "");
 }
 
 function wrap(font: PDFFont, text: string, size: number, width: number): string[] {

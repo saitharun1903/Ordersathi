@@ -68,7 +68,7 @@ export function RetentionSection({ days, canEdit }: { days: number; canEdit: boo
       <Card>
         <CardHeader title="Source file retention" description="How long original voice notes and photos are stored after an order is created." />
         <form onSubmit={save} className="flex flex-col gap-4 p-4 sm:p-5">
-          {!canEdit && <ReadOnlyNote>Only owners can change data retention.</ReadOnlyNote>}
+          {!canEdit && <ReadOnlyNote>Only owners can change data retention. Sample workspaces are read-only.</ReadOnlyNote>}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <Field label="Keep original files for" htmlFor="retention-days" error={error} className="sm:w-64">
               <Select id="retention-days" value={value} onChange={(e) => setValue(Number(e.target.value))} disabled={!canEdit || saving}>

@@ -71,7 +71,7 @@ export function BusinessSection({ data, canEdit }: { data: BusinessData; canEdit
     <Card>
       <CardHeader title="Business details" description="Shown on order confirmations and used to interpret incoming orders." />
       <form noValidate onSubmit={submit} className="flex flex-col gap-5 p-4 sm:p-5">
-        {!canEdit && <ReadOnlyNote>Only owners can change business settings. Ask an owner if something here needs updating.</ReadOnlyNote>}
+        {!canEdit && <ReadOnlyNote>Only owners can change business settings, and sample workspaces are read-only. Create your own workspace to set up your business.</ReadOnlyNote>}
         {formError && (
           <p role="alert" className="rounded-lg border border-bad-line bg-bad-soft px-3 py-2 text-[13px] text-bad">
             {formError}

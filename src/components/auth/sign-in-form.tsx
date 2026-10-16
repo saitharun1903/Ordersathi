@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, FlaskConical } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { acceptInvitesAction } from "@/server/actions/workspace";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { FormAlert, PasswordInput } from "./password-input";
@@ -27,11 +26,18 @@ export function validateCredentials(email: string, password: string): Errors {
   return e;
 }
 
-export async function finishAuth(router: ReturnType<typeof useRouter>) {
-  // Attach any pending team invitations for this email. Failure here should not block sign-in.
-  await acceptInvitesAction().catch(() => null);
-  router.push("/");
-  router.refresh();
+/** Only same-site paths are allowed as a post-sign-in destination (no open redirects). */
+export function safeNext(): string {
+  if (typeof window === "undefined") return "/";
+  const next = new URLSearchParams(window.location.search).get("next") ?? "";
+  return /^\/(?![/\\])[\w\-./?=&%]*$/.test(next) ? next : "/";
+}
+
+// A full navigation (not router.push + refresh) so the auth layout can't redirect to "/" mid-transition,
+// and every server component renders with the new session.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for call-site compatibility
+export async function finishAuth(_router?: ReturnType<typeof useRouter>) {
+  window.location.assign(safeNext());
 }
 
 export function SignInForm({ showDemo }: { showDemo: boolean }) {
@@ -130,7 +136,7 @@ export function SignInForm({ showDemo }: { showDemo: boolean }) {
       </p>
 
       {showDemo && (
-        <section aria-labelledby="demo-heading" className="mt-8 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+        <section id="sample" aria-labelledby="demo-heading" className="mt-8 scroll-mt-6 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] target:ring-2 target:ring-brand/40">
           <div className="flex items-start gap-2.5">
             <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-warn-soft text-warn">
               <FlaskConical className="size-4" />

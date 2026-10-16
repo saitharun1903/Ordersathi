@@ -70,14 +70,19 @@ export function resolveSellQuantity(
   }
   if (unit === product.sellingUnit) return { ok: true, sellQty: quantity, factor: null };
   const conv = product.conversions.find((c) => c.unit === unit);
+  // Rounded to the stored precision so quantity × price always equals the line total shown.
   if (conv) {
     const factor = new Decimal(conv.factor);
-    return { ok: true, sellQty: quantity.mul(factor), factor };
+    return { ok: true, sellQty: quantity.mul(factor).toDecimalPlaces(3, Decimal.ROUND_HALF_UP), factor };
   }
   const universal = UNIVERSAL[unit]?.[product.sellingUnit];
-  if (universal) return { ok: true, sellQty: quantity.mul(universal), factor: new Decimal(universal) };
+  if (universal) return { ok: true, sellQty: quantity.mul(universal).toDecimalPlaces(3, Decimal.ROUND_HALF_UP), factor: new Decimal(universal) };
   return { ok: false, reason: "NO_CONVERSION" };
 }
+
+/** Largest line we accept (₹1 crore); anything bigger is almost certainly a misread quantity. */
+export const MAX_LINE_TOTAL_PAISE = 1_00_00_000 * 100;
+const MAX_SELL_QTY = 9_999_999;
 
 export function lineTotal(sellQty: Decimal, unitPricePaise: number) {
   return sellQty.mul(unitPricePaise).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
@@ -167,7 +172,13 @@ export function evaluateLine(input: EvalInput): EvalResult {
       });
     }
     const price = input.unitPricePaise ?? input.effectivePricePaise;
-    if (sellQuantity && !issues.some((i) => i.code === "PARTIAL_PACK")) total = lineTotal(sellQuantity, price);
+    if (sellQuantity && !issues.some((i) => i.code === "PARTIAL_PACK")) {
+      const t = lineTotal(sellQuantity, price);
+      if (t > MAX_LINE_TOTAL_PAISE || sellQuantity.gt(MAX_SELL_QTY)) {
+        issues.push({ code: "QUANTITY_INVALID", message: "This line is over ₹1 crore — check the quantity", blocking: true });
+        sellQuantity = null;
+      } else total = t;
+    }
   }
 
   let status: LineStatusValue = "CONFIRMED";

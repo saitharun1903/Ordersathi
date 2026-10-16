@@ -73,7 +73,7 @@ export function SignUpForm() {
         <Field label="Your name" htmlFor="name" error={errors.name}>
           <Input ref={nameRef} id="name" autoComplete="name" className="h-10" value={name} onChange={(e) => setName(e.target.value)} disabled={pending} required />
         </Field>
-        <Field label="Work email" htmlFor="email" error={errors.email} hint="Invited by a teammate? Use that email and you'll join their workspace automatically.">
+        <Field label="Work email" htmlFor="email" error={errors.email} hint="Invited by a teammate? Open their invite link after you sign up.">
           <Input
             ref={emailRef}
             id="email"

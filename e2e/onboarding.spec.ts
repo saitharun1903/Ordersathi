@@ -1,12 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { signUp } from "./helpers";
 
 test("a new wholesaler sets up a live workspace and processes a first order", async ({ page }) => {
   const email = `owner.${Date.now()}@example.in`;
   await page.goto("/sign-up");
-  await page.getByLabel("Your name").fill("Test Owner");
-  await page.getByLabel("Work email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("a-strong-password");
-  await page.getByRole("button", { name: "Create account" }).click();
+  await signUp(page, "Test Owner", email);
   await expect(page).toHaveURL(/onboarding/, { timeout: 30_000 });
 
   await page.getByText("Set up my business").click();
@@ -42,10 +40,7 @@ test("a new wholesaler sets up a live workspace and processes a first order", as
 
 test("a new user can open a private sample workspace", async ({ page }) => {
   await page.goto("/sign-up");
-  await page.getByLabel("Your name").fill("Curious User");
-  await page.getByLabel("Work email").fill(`curious.${Date.now()}@example.in`);
-  await page.getByLabel("Password", { exact: true }).fill("a-strong-password");
-  await page.getByRole("button", { name: "Create account" }).click();
+  await signUp(page, "Curious User", `curious.${Date.now()}@example.in`);
   await expect(page).toHaveURL(/onboarding/, { timeout: 30_000 });
   await page.getByText("Explore the sample workspace").click();
   await expect(page).toHaveURL(/dashboard/, { timeout: 60_000 });

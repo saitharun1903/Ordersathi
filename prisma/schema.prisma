@@ -75,6 +75,16 @@ model Verification {
   @@map("verification")
 }
 
+// Shared sign-in rate-limit counters (serverless instances don't share memory).
+model RateLimit {
+  id          String @id @default(cuid())
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rateLimit")
+}
+
 // ───────────────────────── Workspaces & access ─────────────────────────
 
 enum Role {
@@ -137,6 +147,8 @@ model Membership {
 
 model Invitation {
   id          String    @id @default(cuid())
+  // Secret for the invite link. Accepting requires the link, not just a matching email.
+  token       String    @unique @default(cuid())
   workspaceId String
   email       String
   role        Role

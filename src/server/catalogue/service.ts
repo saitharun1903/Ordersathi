@@ -146,7 +146,7 @@ export async function updateProduct(ctx: Ctx, productId: string, raw: unknown) {
     const affected = await refreshOpenOrdersFor(tx, ctx.workspaceId, [p.id]);
     await audit(tx, ctx, "product.updated", { sku: d.sku, priceChanged: p.pricePaise !== d.price, openOrdersFlagged: affected });
     return { affectedOrders: affected };
-  });
+  }, { timeout: 30_000, maxWait: 10_000 });
 }
 
 export async function setProductArchived(ctx: Ctx, productId: string, archived: boolean) {
@@ -156,7 +156,7 @@ export async function setProductArchived(ctx: Ctx, productId: string, archived: 
     if (!r.count) throw notFound("Product");
     await refreshOpenOrdersFor(tx, ctx.workspaceId, [productId]);
     await audit(tx, ctx, archived ? "product.archived" : "product.restored", { productId });
-  });
+  }, { timeout: 30_000, maxWait: 10_000 });
 }
 
 export async function listProducts(ctx: Ctx, opts: { q?: string; category?: string; archived?: boolean } = {}) {

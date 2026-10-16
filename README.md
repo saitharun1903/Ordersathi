@@ -53,7 +53,16 @@ to get a private copy, separate from their live workspace.
 4. **Redeploy** after adding the variables (the first build needs the database to exist).
 
 On Vercel, uploads are stored in Postgres (`STORAGE_DRIVER=database`, automatic) because functions have
-no persistent disk; processing runs after the response via `after()` with a 60 s function limit.
+no persistent disk. Requests are capped at 4.5 MB there, so photos are resized in the browser and the audio/image
+limits default to 4 MB. Processing runs after the response via `after()` (300 s limit, at most 3 attempts per job).
+The daily cron purges expired files and resets the shared sample workspace (`RESET_SHARED_DEMO=false` to keep it).
+
+## Team invitations
+
+Owners invite people from Settings → Team. Each invitation is a private link (valid 14 days, single use);
+nobody is added to a workspace just because their email matches, since email addresses are not verified.
+Sample workspaces are read-only for team and business settings, and the shared demo accounts can't change
+their password or profile.
 
 ## Processing modes
 

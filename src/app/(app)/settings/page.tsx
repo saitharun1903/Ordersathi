@@ -26,8 +26,9 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
       <PageHeader title="Settings" description={`${ws.name} · ${ws.isDemo ? "Sample workspace" : "Live workspace"}`} />
       <SettingsView
         initialTab={initialTab}
-        canManageSettings={can(ctx.role, "settings.manage")}
-        canManageTeam={can(ctx.role, "team.manage")}
+        // Sample workspaces are read-only here; the server enforces the same rule.
+        canManageSettings={can(ctx.role, "settings.manage") && !ctx.isDemo}
+        canManageTeam={can(ctx.role, "team.manage") && !ctx.isDemo}
         business={{
           name: ws.name,
           city: ws.city,
@@ -42,7 +43,8 @@ export default async function SettingsPage(props: PageProps<"/settings">) {
         team={{
           currentUserId: ctx.userId,
           members: team.members.map((m) => ({ id: m.id, role: m.role, userId: m.user.id, name: m.user.name, email: m.user.email })),
-          invites: team.invites.map((i) => ({ id: i.id, email: i.email, role: i.role, createdAt: i.createdAt.toISOString() })),
+          // Invite links are secrets: only people who can manage the team receive them.
+          invites: team.invites.map((i) => ({ id: i.id, email: i.email, role: i.role, createdAt: i.createdAt.toISOString(), token: can(ctx.role, "team.manage") && !ctx.isDemo ? i.token : null })),
         }}
         providers={status}
         retentionDays={ws.sourceRetentionDays}

@@ -121,7 +121,7 @@ export async function setCustomerPrice(ctx: Ctx, customerId: string, raw: unknow
     });
     await refreshOpenOrdersFor(tx, ctx.workspaceId, [p.id]);
     await audit(tx, ctx, "customer.price_set", { customerId, sku: p.sku });
-  });
+  }, { timeout: 30_000, maxWait: 10_000 });
 }
 
 export async function removeCustomerPrice(ctx: Ctx, customerId: string, productId: string) {
@@ -131,7 +131,7 @@ export async function removeCustomerPrice(ctx: Ctx, customerId: string, productI
     if (!r.count) throw notFound("Price");
     await refreshOpenOrdersFor(tx, ctx.workspaceId, [productId]);
     await audit(tx, ctx, "customer.price_removed", { customerId, productId });
-  });
+  }, { timeout: 30_000, maxWait: 10_000 });
 }
 
 const AliasSchema = z.object({ productId: z.string().max(40), text: z.string().trim().min(2).max(80), language: z.enum(["EN", "TE", "TRANSLIT"]) });

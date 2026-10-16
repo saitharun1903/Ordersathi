@@ -72,3 +72,12 @@ describe("formatting", () => {
     expect(formatDateTime("2026-10-16T00:00:00Z")).toBe("16 Oct, 5:30 AM");
   });
 });
+
+describe("conversion precision", () => {
+  it("rounds converted quantities to the stored precision before pricing", () => {
+    const p = { id: "c", name: "Cable", sellingUnit: "METRE", archived: false, conversions: [{ unit: "PIECE", factor: "0.3048" }] };
+    const r = evaluateLine({ product: p, hasCandidates: true, note: null, quantity: "7", unit: "PIECE", rawUnit: null, unitRecognized: true, unitPricePaise: 10000, effectivePricePaise: 10000 });
+    expect(r.sellQuantity).toBe("2.134");
+    expect(r.lineTotalPaise).toBe(21340);
+  });
+});

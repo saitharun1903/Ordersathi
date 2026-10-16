@@ -2,11 +2,11 @@ import { after, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireContext } from "@/server/context";
 import { notFound } from "@/server/errors";
-import { runJob } from "@/server/orders/pipeline";
+import { runJobSafely } from "@/server/orders/pipeline";
 import { errorResponse } from "../../_respond";
 
 // Processing runs after the response (next/server `after`) and needs time on serverless hosts.
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/jobs/[id]">) {
   try {
@@ -21,7 +21,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/jobs/[id]">) {
     const stale =
       (job.status === "RUNNING" && job.leaseUntil && job.leaseUntil < new Date()) ||
       (job.status === "QUEUED" && Date.now() - job.createdAt.getTime() > 15_000);
-    if (stale) after(() => runJob(job.id));
+    if (stale) after(() => runJobSafely(job.id));
     const data = { id: job.id, orderId: job.orderId, status: job.status, stage: job.stage, errorCode: job.errorCode, errorMessage: job.errorMessage, retryable: job.retryable };
     return NextResponse.json({ ok: true, data }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {

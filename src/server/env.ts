@@ -12,8 +12,9 @@ const schema = z.object({
   OPENAI_TRANSCRIBE_MODEL: z.string().default("gpt-4o-transcribe"),
   EXTRACTION_PROVIDER: z.enum(["auto", "rules"]).default("auto"),
   PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(45000),
-  MAX_AUDIO_MB: z.coerce.number().positive().default(16),
-  MAX_IMAGE_MB: z.coerce.number().positive().default(10),
+  // Vercel functions reject request bodies over 4.5 MB, so the defaults are lower there.
+  MAX_AUDIO_MB: z.coerce.number().positive().default(process.env.VERCEL ? 4 : 16),
+  MAX_IMAGE_MB: z.coerce.number().positive().default(process.env.VERCEL ? 4 : 10),
   MAX_TEXT_CHARS: z.coerce.number().int().positive().default(8000),
   PROCESSING_LIMIT_PER_10_MIN: z.coerce.number().int().positive().default(40),
   SHOW_DEMO_LOGIN: z.enum(["true", "false"]).default("true"),

@@ -52,14 +52,15 @@ export async function createSampleWorkspaceAction() {
   }
 }
 
-export async function acceptInvitesAction() {
+export async function acceptInviteAction(token: string) {
   try {
     const session = await getSession();
-    if (!session) throw new AppError("UNAUTHENTICATED", "Please sign in again.");
-    const n = await ws.acceptInvitesFor({ id: session.user.id, email: session.user.email });
-    return { ok: true as const, data: { accepted: n } };
+    if (!session) throw new AppError("UNAUTHENTICATED", "Please sign in to accept the invitation.");
+    const id = await ws.acceptInvite({ id: session.user.id, name: session.user.name }, String(token).slice(0, 100));
+    await setWorkspaceCookie(id);
+    return { ok: true as const, data: { id } };
   } catch (e) {
-    return toResult("invites.accept", e);
+    return toResult("invite.accept", e);
   }
 }
 
